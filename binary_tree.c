@@ -2,77 +2,137 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
-#include "binary_treee.h"
+typedef struct _binary_tree binary_tree;
+typedef struct _node node;
+typedef struct _queue queue;
 
-binary_tree* create_empty_binary_tree()
-
+struct _node
 {
+    int item;
+    int priority;
+    node *next;
+};
 
-	return NULL;
+struct _queue
+{
+    node *first;
+    node *last;
+    int size;
+};
 
+
+queue* create_queue()
+{
+    queue *n_queue = (queue*) malloc(sizeof(queue));
+    n_queue -> first = NULL;
+    n_queue->last = NULL;
+    n_queue -> size = 0;
+    return n_queue;
 }
+
+int is_empty_queue(queue *queue)
+{
+    return (queue -> size == 0);
+}
+
+void enqueue(queue *n_queue, int item)
+{
+    node *newnode = (node*) malloc(sizeof(node));
+    newnode -> item = item;
+    newnode -> next = NULL;
+
+    if(is_empty_queue(n_queue))
+    {
+        n_queue -> first = newnode;
+        n_queue -> last = newnode;
+    }
+
+    else
+    {
+        n_queue-> last -> next = newnode;
+        n_queue -> last = newnode;
+    }
+
+    n_queue -> size ++;
+}
+
+//dequeue the fist item of queue
+int dequeue(queue *queue)
+{
+    if(queue == NULL||queue -> first == NULL)
+        return -1;
+
+    node *aux = queue -> first;
+    queue -> first = aux -> next;
+
+    int dequeued = aux -> item;
+    free(aux);
+    queue -> size--;
+    return dequeued;
+}
+
+
+//############## PARTE DA ARVORE BINARIA ##########	
+
+struct _binary_tree
+{
+	int item;
+	int h;
+	binary_tree *left;
+	binary_tree *right;
+};
+
+binary_tree* create_binary_tree(int item, binary_tree *left, binary_tree *right)
+{
+	binary_tree *new_tree = (binary_tree*) malloc(sizeof(binary_tree));
+	new_tree -> item = item;
+	new_tree -> left = left;
+	new_tree -> right = right;
+	return new_tree;
+}
+
 /*preenche um array com os iten de uma arvore
 current é o int que representa o indice do array
 ele deve  ser 0 qnd adicionado*/
- void preenche(binary_tree *bt, int array[],int *current) 
+ void preenche(binary_tree *bt, int *array) 
 
 {
 
 	if (bt != NULL) 
 	{
-
-
-		array[*current] = bt->item;
-		(*current)++;
-
-		preenche(bt->left, array ,current);
-		preenche(bt->right,array,current);
+		*array = bt->item;
+		preenche(bt->left, ++array );
+		preenche(bt->right, ++array );
 
 	}
 
 }
 
 /*compara 2 arvores para ver se sao iguais
-inserir as duas arvores e um inteiro com valor zero
-e o inteiro mudar de valor as arvores sao diferents*/
-void compara_arvore(binary_tree *bt, binary_tree* aux, int *i)
+inserir as duas arvores, retorna -1 se forem diferentes*/
+int equals_trees(binary_tree *bt, binary_tree* aux)
 {
 
-		if (bt != NULL && aux != NULL && *i == 0)
+		if (bt != NULL && aux != NULL)
 		 {
 
 			if(bt-> item != aux -> item)
-			   (*i)++;
+			   return -1;
 
-			compara_arvore(bt->left, aux-> left , i);
+			 int result = equals_trees(bt->left, aux-> left );
+			 if (result == -1)
+			 	return result;
 
-			compara_arvore(bt->right, aux->right, i);
+			 equals_trees(bt->right, aux->right);
 
 		}
 
 		else if (bt == NULL && aux != NULL || aux == NULL && bt != NULL)
-		{
-			(*i)++;
-		}
+			return -1;
+		
 
 }
 
-binary_tree* create_binary_tree_queue(Queue *queue) 
-{
-  if(queue-> first == NULL) return NULL;
- 
-  int value = dequeue(queue);
- 
-  if(value == -1) return NULL;
- 
-  binary_tree *bt = malloc(sizeof(binary_tree));
-  bt->value = value;
- 
-  bt->left = create_binary_tree(queue);
-  bt->right = create_binary_tree(queue);
- 
-  return bt;
-}
 
  bool is_empty(binary_tree *bt)
  {
@@ -81,39 +141,39 @@ binary_tree* create_binary_tree_queue(Queue *queue)
 /*busca em arvore de busca binaria
 se o elemento procurado estiver na arvore
 retorna 1, casocontrario retorna 0*/
-int search_binary(binary_tree *bt, int item)
+binary_tree* search_binary(binary_tree *bt, int item)
 
 {
 	if(bt == NULL)
-		return 0;
+		return NULL;
 
 	else if ( (bt->item == item))
-		      return 1;
-
-    else if(bt != NULL)
+		      return bt;
+    else 
     {
 
-		 if (bt->item > item) 
+		if (bt->item > item) 
 			return search_binary(bt->left, item);
  
-		 else 
+		else 
 			return search_binary(bt->right, item);
     }
 }
+
 /*calcula a profundidade de um no, inserir a arvore, o item que
  quer saber a profundidade e um int para receber a profundidade*/
-int profundidade(binary_tree *bt, int num,int *profundidade)
+int profundidade(binary_tree *bt, int num,int *profun)
 {
    static int aux = 0;
 
 	if (bt != NULL &&  *profundidade == 0 )
 	   {
-			if(bt->item == num)  *profundidade = aux;
+			if(bt->item == num)  *profun = aux;
 				 
 			    
 		 aux ++;
-		profundidade(bt -> left, num, &profundidade);
-		profundidade(bt -> right, num, &profundidade);
+		profundidade(bt -> left, num, profun);
+		profundidade(bt -> right, num, profun);
 		aux --;
 	}
 
@@ -138,32 +198,12 @@ int altura_binary_tree( binary_tree *arvore)
 
 }
 
- void print_in_order(binary_tree *bt)
-
-{
-
-	if (!is_empty(bt)) 
-	{
-
-		print_in_order(bt->left);
-
-		printf("%d", bt->item);
-
-		print_in_order(bt->right);
-
-	}
-
-}
-
 
 void print_pre_order(binary_tree *bt)
-
 {
-
-		if (!is_empty(bt))
+		if (bt != NULL)
 		 {
-
-			printf("%d", bt->item);
+			printf("%d  ---  )", bt->item);
 
 			print_pre_order(bt->left);
 
@@ -173,41 +213,109 @@ void print_pre_order(binary_tree *bt)
 
 }
 
-void print_post_order(binary_tree *bt)
 
+void print(binary_tree *bt)
 {
-
-	if (!is_empty(bt)) 
-	{
-
-		print_post_order(bt->left);
-
-		print_post_order(bt->right);
-
-		printf("%d", bt->item);
-
-	}
-
+	if (bt != NULL )
+		 {
+		 	printf("  ( ");
+			printf("%d", bt->item);
+			print(bt->left);
+			print(bt->right);
+			printf(" )");
+			
+		}
+	else
+	  printf("  ()");
 }
 
 
 
-void add(binary_tree **bt, int item)
+void add_abb(binary_tree **bt, int item)
 
 {
 
 	if (*bt == NULL)
 		*bt = create_binary_tree(item, NULL, NULL);
 	else if ((*bt)->item > item)
-		add(&(*bt)->left, item);
+		add_abb(&(*bt)->left, item);
 	 else 
-		add(&(*bt)->right, item);
+		add_abb(&(*bt)->right, item);
+}
 
+void copy_tree(binary_tree* bt1, binary_tree **bt2)
+{
+	if(bt1 != NULL)
+	{
+		*bt2 = create_binary_tree(bt1->item, NULL,NULL);
+		copy_tree(bt1->left, &(*bt2)->left);
+		copy_tree(bt1->right,&(*bt2)->right);
+	}
+}
+
+void free_tree(binary_tree *bt)
+{
+	if(bt != NULL)
+	{
+		free_tree(bt->left);
+		free_tree(bt->right);
+	}
+}
+
+binary_tree* create_binary_tree_queue(queue *queue) 
+{
+  if(queue-> first == NULL) return NULL;
+ 
+  int value = dequeue(queue);
+ 
+  if(value == -1) return NULL;
+ 
+  binary_tree *bt = create_binary_tree(value,NULL,NULL);
+  bt->left = create_binary_tree_queue(queue);
+  bt->right = create_binary_tree_queue(queue);
+ 
+  return bt;
 }
 
 
+int str_to_int(char *str)
+{
+	char number[10] = "\0";
+	int i = 0;
+	while(*str != ')' && *str != '\0')
+	{
+		number[i] = *str;
+		++i;
+		++str;
+	}
+	if(i == 0) 
+		return -1;
+	return atoi(number);
 
+}
 
+binary_tree* str_to_tree(char *str)
+{
+	queue* new_queue = create_queue();
+	while(*str != '\0')
+	{
+		if(*str == '(')
+		 enqueue(new_queue, str_to_int(++str));
+
+		++str;
+	}
+
+	return create_binary_tree_queue(new_queue);
+}
+
+int main()
+{
+	binary_tree *tree = NULL;
+	char str[] = "(12(7(3()())(10()(11()())))(23(17()())(31()())))";
+	tree = str_to_tree(str);
+	
+	print(tree);
+}
 
 
 

@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-typedef struct _node node;
+0typedef struct _node node;
 typedef struct _queue queue;
 
 struct _node
@@ -58,6 +58,28 @@ void enqueue_last(queue *n_queue, int item)
     n_queue -> size ++;
 }
 
+void enqueue_front(queue *n_queue, int item)
+{
+    node *newnode = (node*) malloc(sizeof(node));
+    newnode -> item = item;
+    newnode -> next = NULL;
+
+    if(is_empty_queue(n_queue))
+    {
+        n_queue -> first = newnode;
+        n_queue -> last = newnode;
+    }
+
+    else
+    {
+        newnode -> next = n_queue->first;
+        n_queue -> first = newnode;
+    }
+
+    n_queue -> size ++;
+}
+
+//enqueue sorted from highest to lowest
 void enqueue_max(queue *n_queue, int item, int priority)
 {
     node *newnode = (node*) malloc(sizeof(node));
@@ -91,6 +113,7 @@ void enqueue_max(queue *n_queue, int item, int priority)
     n_queue -> size ++;
 }
 
+//enqueue sorted from lowest  to highest
 void enqueue_min(queue *n_queue, int item, int priority)
 {
     node *newnode = (node*) malloc(sizeof(node));
@@ -151,6 +174,7 @@ int dequeue_max(queue *q)
     return larger;
 }
 
+//dequeue the fist item of queue
 int dequeue(queue *queue)
 {
     if(queue == NULL||queue -> first == NULL)
