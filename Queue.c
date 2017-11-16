@@ -1,84 +1,197 @@
 #include <stdio.h>
 #include <stdlib.h>
-typedef struct node Node;
-typedef struct queue Queue;
+typedef struct _node node;
+typedef struct _queue queue;
 
-struct node
+struct _node
 {
     int item;
-    Node *next;
+    int priority;
+    node *next;
 };
 
-struct queue
+struct _queue
 {
-    Node *first;
+    node *first;
+    node *last;
     int size;
 };
 
-Queue* initialize_Queue()
+
+queue* create_queue()
 {
-    return NULL;
+    queue *n_queue = (queue*) malloc(sizeof(queue));
+    n_queue -> first = NULL;
+    n_queue->last = NULL;
+    n_queue -> size = 0;
+    return n_queue;
 }
 
-Queue* create_Queue()
+int is_empty_queue(queue *queue)
 {
-    Queue *queue=(Queue*)malloc(sizeof(Queue));
-    queue -> first = NULL;
-    queue -> size = 0;
-    return queue;
+    return (queue -> size == 0);
 }
 
-int is_empty(Queue *queue)
+int size_queue(queue *queue)
 {
-    if(queue == NULL || queue -> size == 0)
-        return 1;
-    else
-        return 0;
+    return queue -> size;
 }
 
-int size_of_Queue(Queue *queue)
+void enqueue_last(queue *n_queue, int item)
 {
-    if(queue==NULL)
-        return 0;
-    else
-        return queue -> size;
-}
+    node *newnode = (node*) malloc(sizeof(node));
+    newnode -> item = item;
+    newnode -> next = NULL;
 
-void enQueue(Queue *queue, int item)
-{
-    Node *newNode = (Node*) malloc(sizeof(Node));
-    newNode -> item=item;
-    newNode -> next = NULL;
-    if(queue->first==NULL)
-        queue -> first = newNode;
+    if(is_empty_queue(n_queue))
+    {
+        n_queue -> first = newnode;
+        n_queue -> last = newnode;
+    }
+
     else
     {
-        Node *aux = queue -> first;
-        while(aux -> next != NULL)
-            aux = aux -> next;
-        aux -> next = newNode;
+        n_queue-> last -> next = newnode;
+        n_queue -> last = newnode;
     }
-    queue -> size ++;
+
+    n_queue -> size ++;
 }
 
-int deQueue(Queue *queue)
+void enqueue_max(queue *n_queue, int item, int priority)
+{
+    node *newnode = (node*) malloc(sizeof(node));
+    newnode -> item = item;
+    newnode -> priority = priority;
+    newnode -> next = NULL;
+
+    if(is_empty_queue(n_queue))
+    {
+        n_queue -> first = newnode;
+        n_queue -> last = newnode;
+    }
+    else if(priority > n_queue->first->priority)
+    {
+        newnode->next = n_queue->first;
+        n_queue->first = newnode;
+    }
+    else
+    {
+        node *current = n_queue -> first;
+        while ((current->next != NULL) && (current->next->priority > priority))
+            current = current->next;
+
+        newnode->next = current->next;
+        current->next = newnode;
+
+        if(priority < n_queue->last->priority)
+            n_queue->last = newnode;
+    }
+
+    n_queue -> size ++;
+}
+
+void enqueue_min(queue *n_queue, int item, int priority)
+{
+    node *newnode = (node*) malloc(sizeof(node));
+    newnode -> item = item;
+    newnode -> priority = priority;
+    newnode -> next = NULL;
+
+    if(is_empty_queue(n_queue))
+    {
+        n_queue -> first = newnode;
+        n_queue -> last = newnode;
+    }
+     else if(priority < n_queue->first->priority)
+    {
+        newnode->next = n_queue->first;
+        n_queue->first = newnode;
+    }
+    else
+    {
+        node *current = n_queue -> first;
+        while ((current->next != NULL) && (current->next->priority < priority))
+            current = current->next;
+
+        newnode->next = current->next;
+        current->next = newnode;
+
+        if(priority > n_queue->last->priority)
+            n_queue->last = newnode;
+    }
+
+    n_queue -> size ++;
+}
+
+//dequeue the larger item at queue
+int dequeue_max(queue *q)
+{
+    int larger = q -> first -> item;
+    node* current = q->first, *aux;
+    for(;current != NULL; current = current->next)
+    {
+        if (current->item > larger)
+            larger = current->item;
+    }
+
+    if(q->first->item == larger)
+        q->first = q->first->next;
+
+    else
+    {
+        current = q->first;
+        while(current->next->item != larger)
+           current = current->next;
+        aux = current->next;
+        current->next = aux->next;
+        free(aux);
+    }
+    q -> size--;
+    return larger;
+}
+
+int dequeue(queue *queue)
 {
     if(queue == NULL||queue -> first == NULL)
         return -1;
-    Node *aux = queue -> first;
+
+    node *aux = queue -> first;
     queue -> first = aux -> next;
+
     int dequeued = aux -> item;
     free(aux);
     queue -> size--;
     return dequeued;
 }
 
+//clean the queue
+void free_queue(queue *q)
+{
+    node* aux;
+    while(q->first != NULL)
+    {
+        aux = q->first;
+        q->first = q->first->next;
+        free(aux);
+    }
+    free(q);
+}
+
 
 int main()
 {
-    Queue *fila;
-    fila=initialize_Queue();
-    fila=create_Queue();
+   
+    queue *fila = create_queue();
 
+    int x = 1;
 
+    while(x)
+    {
+        scanf("%d",&x);
+        enqueue_min(fila, x, x);
+    }
+
+    while(!is_empty_queue(fila))
+        printf("%d\n",dequeue_max(fila) );
 }

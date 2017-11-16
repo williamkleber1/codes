@@ -1,53 +1,61 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef struct node Node;
-typedef struct stack Stack;
+typedef struct _node node;
+typedef struct _stack stack;
 
-struct node
+struct _node
 {
 	int item;
-	Node *next;
+	node *next;
 };
 
-struct stack
+struct _stack
 {
-	Node *top;
+	node *top;
 	int size;
 };
 
-Stack* create_Stack()
+stack* create_stack()
 {
-	return NULL;
+	stack *aux = (stack*) malloc(sizeof(stack));
+	aux -> top = NULL;
+	aux -> size = 0;
+	return aux;
+}
+
+int is_empty_stack(stack *n_stack)
+{
+	return n_stack->size == 0;
 }
 
 
-void push(Stack *stack, int item)
+void push(stack *stack, int item)
 {
-	Node *newNode = (Node*) malloc(sizeof(Node));
-	newNode -> item = item;
-	newNode -> next = stack -> top;
-	stack -> top = newNode;
+	node *newnode = (node*) malloc(sizeof(node));
+	newnode -> item = item;
+	newnode -> next = stack -> top;
+	stack -> top = newnode;
 	stack-> size++;
 
 }
 
-int pop(Stack *stack)
+int pop(stack *stack)
 {
-	if(stack==NULL || stack->top==NULL)
+	if(is_empty_stack(stack))
 		return -1;
 	else
 	{
-		Node *aux = stack -> top;
+		node *aux = stack -> top;
 		stack -> top = aux->next;
-		int aux2 = aux -> item;
+		int number = aux -> item;
 		stack->size--;
 		free(aux);
-		return aux2;
+		return number;
 	}
 }
 
-int peek(Stack *stack) 
+int peek(stack *stack) 
 {
 	if(stack == NULL || stack -> top == NULL)
 		return -1;
@@ -57,7 +65,16 @@ int peek(Stack *stack)
 
 int main ()
 {
-	Stack *pilha;
-	pilha=create_Stack();
-	
+	stack *new_stack = create_stack();
+	int i = 0;
+	for (; i <= 50; ++i)
+		push(new_stack,i);
+
+	while(!is_empty_stack(new_stack))
+		printf("%d\n",pop(new_stack) );
+
+	stack *aux = create_stack();
+	new_stack = aux;
+
+	printf("------%d---------\n",aux == new_stack );
 }
