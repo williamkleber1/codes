@@ -2,10 +2,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#define MAX(a , b) a > b ? a : b
+
 typedef struct _binary_tree binary_tree;
 typedef struct _node node;
 typedef struct _queue queue;
 
+//################PARTE DA FILA #########################
 struct _node
 {
     int item;
@@ -72,7 +75,7 @@ int dequeue(queue *queue)
 }
 
 
-//############## PARTE DA ARVORE BINARIA ##########	
+//############################################## PARTE DA ARVORE AVL/ABB ###################################	
 
 struct _binary_tree
 {
@@ -88,21 +91,185 @@ binary_tree* create_binary_tree(int item, binary_tree *left, binary_tree *right)
 	new_tree -> item = item;
 	new_tree -> left = left;
 	new_tree -> right = right;
+	new_tree-> h = 0;
 	return new_tree;
+}
+
+/*insere em uma arvore binaria de busca
+usa ponteiro duplo, entao no parametro
+vai &bt, onde bt é a arvore onde desejamos adicionar*/
+void add_abb(binary_tree **bt, int item)
+{
+
+	if (*bt == NULL)
+		*bt = create_binary_tree(item, NULL, NULL);
+	else if ((*bt)->item > item)
+		add_abb(&(*bt)->left, item);
+	 else 
+		add_abb(&(*bt)->right, item);
+}
+
+
+//Calcula a altura da arvore Binaria
+int height(binary_tree *bt) 
+{
+	if (bt == NULL)	return -1;
+	else			
+		return 1 + MAX( height(bt->left), height(bt->right) );
+}
+
+
+//calcula o banceamento da arvore
+int is_balanced(binary_tree *bt) 
+{
+	int bf = height(bt->left) - height(bt->right);
+	return ( (bf >= -1) && (bf <= 1) );
+}
+
+
+//rotaciona para esquerda
+binary_tree* rotate_left(binary_tree *bt) 
+{
+	binary_tree *subtree_root = NULL;
+	if (bt != NULL && bt->right != NULL) 
+	{
+		subtree_root = bt->right;
+		bt->right = subtree_root->left;
+		subtree_root->left = bt;
+	}
+	subtree_root->h = height(subtree_root);
+	bt->h = height(bt);
+	return subtree_root;
+}
+
+//rotaciona para direita
+binary_tree* rotate_right(binary_tree *bt) 
+{
+	binary_tree *subtree_root = NULL;
+	if (bt != NULL && bt->left != NULL) 
+	{
+		subtree_root = bt->left;
+		bt->left = subtree_root->right;
+		subtree_root->right = bt;
+	}
+	subtree_root->h = height(subtree_root);
+	bt->h = height(bt);
+	return subtree_root;
+}
+
+int balance_factor(binary_tree *bt) 
+{
+	if (bt == NULL)
+		return 0;
+
+	else if ((bt->left != NULL) && (bt->right != NULL))
+		return (bt->left->h - bt->right->h);
+
+	else if ((bt->left != NULL) && (bt->right == NULL))
+		return (bt->left->h);
+
+	else
+		return (bt->right->h - 1);
+}
+
+
+
+binary_tree* add_node_avl(binary_tree *bt, int item) 
+{
+
+	if (bt == NULL)
+		return create_binary_tree(item, NULL, NULL);
+
+	else if (bt->item > item)
+		bt->left = add_node_avl(bt->left, item);
+	else 
+		bt->right = add_node_avl(bt->right, item);
+	
+	bt->h = height(bt);
+	binary_tree *child;
+
+	if (balance_factor(bt) == 2 || balance_factor(bt) == -2)
+	{
+		if (balance_factor(bt) == 2) 
+		{
+			child = bt->left;
+			if (balance_factor(child) == -1)
+				bt->left = rotate_left(child);
+			
+			bt = rotate_right(bt);
+		}
+		else if (balance_factor(bt) == -2) 
+		{
+			child = bt->right;
+			if (balance_factor(child) == 1) 
+				bt->right = rotate_right(child);
+
+			bt = rotate_left(bt);
+		}
+	}
+	return bt;
+}
+
+
+
+/*busca em arvore de busca binaria
+se o elemento procurado estiver na arvore
+retorna 1, casocontrario retorna 0*/
+binary_tree* search_binary(binary_tree *bt, int item)
+
+{
+	if(bt == NULL)
+		return NULL;
+
+	else if ( (bt->item == item))
+		      return bt;
+    else 
+    {
+
+		if (bt->item > item) 
+			return search_binary(bt->left, item);
+ 
+		else 
+			return search_binary(bt->right, item);
+    }
+}
+
+
+
+//########################################### ARVORE BINARIA #####################################
+
+// verifica se um no é folha
+int is_leaf(binary_tree *bt)
+{
+	return (bt->left == NULL && bt-> right == NULL);
+}
+
+//calcula se a soma de todoa oa nós ate uma folha é igual a N
+int sum_nodes(binary_tree* bt, int sum, int N)
+{
+
+	if(is_leaf(bt) && (sum + bt->item) == N) return -1;
+
+	int result = sum_nodes(bt->left, sum + bt->item, N);
+
+	if(result == -1) return -1;
+
+	return sum_nodes(bt->right, sum + bt->item, N );
 }
 
 /*preenche um array com os iten de uma arvore
 current é o int que representa o indice do array
 ele deve  ser 0 qnd adicionado*/
- void preenche(binary_tree *bt, int *array) 
+ void preenche(binary_tree *bt, int *array, int *i) 
 
 {
 
 	if (bt != NULL) 
 	{
-		*array = bt->item;
-		preenche(bt->left, ++array );
-		preenche(bt->right, ++array );
+		array[*i] = bt->item;
+		*(i++);
+		preenche(bt->left, array, i );
+		preenche(bt->right, array, i );
 
 	}
 
@@ -128,37 +295,10 @@ int equals_trees(binary_tree *bt, binary_tree* aux)
 		}
 
 		else if (bt == NULL && aux != NULL || aux == NULL && bt != NULL)
-			return -1;
-		
+			return -1;		
 
 }
 
-
- bool is_empty(binary_tree *bt)
- {
- 	return (bt == NULL);
- }
-/*busca em arvore de busca binaria
-se o elemento procurado estiver na arvore
-retorna 1, casocontrario retorna 0*/
-binary_tree* search_binary(binary_tree *bt, int item)
-
-{
-	if(bt == NULL)
-		return NULL;
-
-	else if ( (bt->item == item))
-		      return bt;
-    else 
-    {
-
-		if (bt->item > item) 
-			return search_binary(bt->left, item);
- 
-		else 
-			return search_binary(bt->right, item);
-    }
-}
 
 /*calcula a profundidade de um no, inserir a arvore, o item que
  quer saber a profundidade e um int para receber a profundidade*/
@@ -181,29 +321,13 @@ int profundidade(binary_tree *bt, int num,int *profun)
 }
 
 
-/* calcula a altura de um no na arvore*/
-int altura_binary_tree( binary_tree *arvore)
-{
-	binary_tree *bt = arvore;
-	if (bt != NULL)
-	{
-		int alt_left = altura_binary_tree(bt -> left);
-		int alt_right = altura_binary_tree(bt -> right);
-		if(alt_left >= alt_right)
-			 return (alt_left + 1);
-
-		else
-			return (alt_right +1);
-	}
-
-}
 
 
 void print_pre_order(binary_tree *bt)
 {
 		if (bt != NULL)
 		 {
-			printf("%d  ---  )", bt->item);
+			printf("%d  ---  ", bt->item);
 
 			print_pre_order(bt->left);
 
@@ -213,7 +337,7 @@ void print_pre_order(binary_tree *bt)
 
 }
 
-
+//imprime uma arvore binaria no formato LISP
 void print(binary_tree *bt)
 {
 	if (bt != NULL )
@@ -223,7 +347,6 @@ void print(binary_tree *bt)
 			print(bt->left);
 			print(bt->right);
 			printf(" )");
-			
 		}
 	else
 	  printf("  ()");
@@ -231,18 +354,10 @@ void print(binary_tree *bt)
 
 
 
-void add_abb(binary_tree **bt, int item)
 
-{
-
-	if (*bt == NULL)
-		*bt = create_binary_tree(item, NULL, NULL);
-	else if ((*bt)->item > item)
-		add_abb(&(*bt)->left, item);
-	 else 
-		add_abb(&(*bt)->right, item);
-}
-
+/*copia uma arvore em outra, o segundo parametro
+é ponteiro duplo, então temos que colocar &bt2, onde bt2
+é onde queremos guardar a copia da bt1*/
 void copy_tree(binary_tree* bt1, binary_tree **bt2)
 {
 	if(bt1 != NULL)
@@ -253,15 +368,18 @@ void copy_tree(binary_tree* bt1, binary_tree **bt2)
 	}
 }
 
+//desaloca uma arvore
 void free_tree(binary_tree *bt)
 {
 	if(bt != NULL)
 	{
 		free_tree(bt->left);
 		free_tree(bt->right);
+		free(bt);
 	}
 }
 
+//recebe uma fila, e retorna uma arvore montada em pre-ordem
 binary_tree* create_binary_tree_queue(queue *queue) 
 {
   if(queue-> first == NULL) return NULL;
@@ -277,12 +395,12 @@ binary_tree* create_binary_tree_queue(queue *queue)
   return bt;
 }
 
-
+//recebe uma string e devolve seu correspondente em int
 int str_to_int(char *str)
 {
 	char number[10] = "\0";
 	int i = 0;
-	while(*str != ')' && *str != '\0')
+	while(*str != ')' && *str != '\0' )
 	{
 		number[i] = *str;
 		++i;
@@ -294,27 +412,40 @@ int str_to_int(char *str)
 
 }
 
+// retorna uma arvore criada de uma string no formato LISP 
 binary_tree* str_to_tree(char *str)
 {
+	int i = 0;
 	queue* new_queue = create_queue();
-	while(*str != '\0')
+	while(*str != '\0' && i < strlen(str))
 	{
-		if(*str == '(')
-		 enqueue(new_queue, str_to_int(++str));
+		if(*str == '(') printf("%d\n", str_to_int(++str));
+		 //enqueue(new_queue, str_to_int(++str));
 
 		++str;
+		++i;
 	}
 
-	return create_binary_tree_queue(new_queue);
+	//return create_binary_tree_queue(new_queue);
 }
 
 int main()
 {
-	binary_tree *tree = NULL;
-	char str[] = "(12(7(3()())(10()(11()())))(23(17()())(31()())))";
-	tree = str_to_tree(str);
-	
-	print(tree);
+	binary_tree *arvore = NULL;
+
+	char str1[500];
+	gets(str1);
+
+
+	char *str = str1;
+
+
+
+	arvore = str_to_tree(str);
+	print(arvore);
+
+	if(sum_nodes(arvore,0,22) == -1) printf("\nsiiiiiiiiiiiiimmmmmmmmmm\n");
+	else printf("naaaaaaaaaaaaaaaaaooooooooooooooooooo\n");
 }
 
 
